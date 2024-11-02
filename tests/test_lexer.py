@@ -1,6 +1,5 @@
 from main import Lexer, TokenType
 
-from main import Lexer, TokenType
 
 def test_basic_tokens():
     code = """+ - * / ^ ~ : :- . , ( ) ?-"""
