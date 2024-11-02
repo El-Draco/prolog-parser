@@ -10,4 +10,4 @@ coverage:
 
 .PHONY: codestyle
 codestyle:
-	ruff . --fix
+	ruff check . --fix
