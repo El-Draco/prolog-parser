@@ -7,12 +7,15 @@ class Lexer:
         self.current_char = 0
         self.tokenize()
 
+    # @TODO
     def tokenize(self):
         pass
 
+    # @TODO:
     def get_next_token(self):
         pass
 
+    # @TODO:
     def peek_token(self):
         pass
 
@@ -40,36 +43,19 @@ class Parser:
         else:
             self.error("Expected <clause-list> or <query> at start of program")
 
+    # @TODO:
     def clause_list(self):
-        self.clause()
-        if self.current_token == "clause-list":
-            self.clause_list()
+        pass
 
+    # @TODO:
     def clause(self):
-        self.predicate()
-        if self.current_token == ".":
-            self.advance()
-        elif self.current_token == ":-":
-            self.advance()
-            self.predicate_list()
-            if self.current_token == ".":
-                self.advance()
-            else:
-                self.error("Expected '.' after predicate list")
-        else:
-            self.error("Expected '.' or ':-' after predicate")
+        pass
 
+    # @TODO:
     def query(self):
-        if self.current_token == "?-":
-            self.advance()
-            self.predicate_list()
-            if self.current_token == ".":
-                self.advance()
-            else:
-                self.error("Expected '.' after query")
-        else:
-            self.error("Expected '?-' to start a query")
+        pass
 
+    # @TODO:
     def predicate_list(self):
         self.predicate()
         while self.current_token == ",":
@@ -101,15 +87,19 @@ class Parser:
         else:
             self.error("Expected <term>")
 
+    # @TODO:
     def is_atom(self):
         pass
 
+    # @TODO:
     def is_variable(self):
         pass
 
+    # @TODO:
     def is_structure(self):
         pass
 
+    # @TODO:
     def is_numeral(self):
         pass
 
@@ -117,7 +107,6 @@ class Parser:
         error_msg = f"Syntax Error: {message} at line {self.lexer.current_line}, char {self.lexer.current_char}"
         self.errors.append(error_msg)
         self.advance()
-
 
 def main():
     file_num = 1
