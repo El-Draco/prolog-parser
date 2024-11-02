@@ -2,3 +2,5 @@
 env/
 .pytest_cache
 parser_output.txt
+.coverage
+htmlcov/
