@@ -6,3 +6,4 @@ parser_output.txt
 htmlcov/
 __pycache__/
 tests/__pycache__/
+.python-version
