@@ -4,3 +4,5 @@ env/
 parser_output.txt
 .coverage
 htmlcov/
+__pycache__/
+tests/__pycache__/
