@@ -1,5 +1,6 @@
 import os
 from enum import Enum, auto
+from loguru import logger
 
 class TokenType(Enum):
     """
@@ -38,7 +39,6 @@ class Lexeme:
 
     def __str__(self):
         return f"Lexeme({self.token_type}, '{self.value}', Line: {self.line}, Char: {self.char_position})"
-
 
 class Lexer:
     def __init__(self, code: str):
@@ -137,7 +137,6 @@ class Lexer:
         while self.peek_next_char() and (self.peek_next_char().isalnum() or self.peek_next_char() == '_'):
             value += self.get_next_char()
         return Lexeme(TokenType.VARIABLE, value, self.line, start_position)
-
 
 class Parser:
     def __init__(self, lexer):
@@ -242,12 +241,12 @@ class Parser:
         print(error_msg)
 
 def main():
-    file_num = 1
+    file_num = 4
     output_filename = "parser_output.txt"
-
     open(output_filename, "w").close()
 
     while True:
+        logger.info(f"FILE {file_num}")
         filename = f"files/{file_num}.txt"
         if not os.path.isfile(filename):
             break
