@@ -1,4 +1,4 @@
-# Prolog Parser Project
+# Prolog Parser
 
 This project implements a **Recursive Descent Parser** for a simplified version of the Prolog programming language, following a given BNF grammar. The parser validates Prolog code by checking its syntax, identifying any errors, and reporting them. 
 
