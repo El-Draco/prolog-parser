@@ -238,10 +238,10 @@ class Parser:
     def error(self, message, ):
         error_msg = f"Syntax Error: {message} at line {self.current_token.line}, char {self.current_token.char_position}"
         self.errors.append(error_msg)
-        print(error_msg)
+        logger.error(error_msg)
 
 def main():
-    file_num = 4
+    file_num = 1
     output_filename = "parser_output.txt"
     open(output_filename, "w").close()
 
