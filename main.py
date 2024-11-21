@@ -13,7 +13,8 @@ class TokenType(Enum):
     ESCAPE = auto()             # \
     CARET = auto()              # ^
     TILDE = auto()              # ~
-    COLON = auto()              # :-
+    COLON = auto()              # :
+    COLON_DASH = auto()         # :-
     PERIOD = auto()             # .
     COMMA = auto()              # ,
     OPEN_PAREN = auto()         # (
@@ -88,9 +89,11 @@ class Lexer:
                 yield Lexeme(TokenType.CARET, char, self.line, self.char_position)
             elif char == '~':
                 yield Lexeme(TokenType.TILDE, char, self.line, self.char_position)
+            elif char == "'":
+                yield self.tokenize_string()
             elif char == ':':
                 if self.peek_next_char() == '-':
-                    yield Lexeme(TokenType.COLON, ":-", self.line, self.char_position)
+                    yield Lexeme(TokenType.COLON_DASH, ":-", self.line, self.char_position)
                     self.get_next_char()
                 else:
                     yield Lexeme(TokenType.COLON, ":", self.line, self.char_position)
@@ -138,6 +141,19 @@ class Lexer:
             value += self.get_next_char()
         return Lexeme(TokenType.VARIABLE, value, self.line, start_position)
 
+    def tokenize_string(self):
+        start_position = self.char_position
+        value = ""
+        while True:
+            char = self.get_next_char()
+            if char is None:  # End of file before closing quote
+                raise ValueError(f"Unterminated string starting at line {self.line}, char {start_position}")
+            if char == "'":  # Closing quote
+                break
+            value += char
+        return Lexeme(TokenType.ATOM, value, self.line, start_position)
+
+
 class Parser:
     def __init__(self, lexer):
         self.tokens = lexer.tokenize()
@@ -178,13 +194,12 @@ class Parser:
         self.predicate()
         if self.current_token.token_type == TokenType.PERIOD:
             self.advance()
-        elif self.current_token.token_type == TokenType.COLON:
+        elif self.current_token.token_type == TokenType.COLON_DASH:
             self.advance()
             self.predicate_list()
             self.match(TokenType.PERIOD)
         else:
             self.error("Expected '.' or ':-' after predicate")
-
     def clause_list(self):
         self.clause()
         if self.current_token.token_type == TokenType.ATOM:
