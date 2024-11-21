@@ -7,7 +7,7 @@ def test_basic_tokens():
     tokens = list(lexer.tokenize())
     expected_tokens = [
         TokenType.PLUS, TokenType.MINUS, TokenType.MULTIPLY, TokenType.DIVIDE,
-        TokenType.CARET, TokenType.TILDE, TokenType.COLON, TokenType.COLON,
+        TokenType.CARET, TokenType.TILDE, TokenType.COLON, TokenType.COLON_DASH,
         TokenType.PERIOD, TokenType.COMMA, TokenType.OPEN_PAREN,
         TokenType.CLOSE_PAREN, TokenType.QUERY
     ]
