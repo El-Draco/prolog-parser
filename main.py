@@ -191,19 +191,29 @@ class Parser:
             self.error("Expected <clause-list> or <query> at start of program")
 
     def clause(self):
-        self.predicate()
-        if self.current_token.token_type == TokenType.PERIOD:
-            self.advance()
-        elif self.current_token.token_type == TokenType.COLON_DASH:
-            self.advance()
-            self.predicate_list()
-            self.match(TokenType.PERIOD)
-        else:
-            self.error("Expected '.' or ':-' after predicate")
+        try:
+            self.predicate()
+            if self.current_token.token_type == TokenType.PERIOD:
+                self.advance()
+            elif self.current_token.token_type == TokenType.COLON_DASH:
+                self.advance()
+                self.predicate_list()
+                self.match(TokenType.PERIOD)
+            else:
+                self.error("Expected '.' or ':-' after predicate", sync_tokens={TokenType.PERIOD, TokenType.QUERY})
+        except Exception as e:
+            self.error(f"Error in clause: {e}", sync_tokens={TokenType.PERIOD, TokenType.QUERY})
+
     def clause_list(self):
-        self.clause()
-        if self.current_token.token_type == TokenType.ATOM:
-            self.clause_list()
+        while True:
+            try:
+                self.clause()
+                if self.current_token.token_type != TokenType.ATOM:
+                    break
+            except Exception as e:
+                self.error(f"Error in clause list: {e}", sync_tokens={TokenType.ATOM, TokenType.QUERY})
+                if self.current_token.token_type not in {TokenType.ATOM, TokenType.QUERY}:
+                    self.advance()
 
     def query(self):
         if self.current_token.token_type == TokenType.QUERY:
@@ -212,48 +222,80 @@ class Parser:
             if self.current_token.token_type == TokenType.PERIOD:
                 self.advance()
             else:
-                self.error("Expected '.' at the end of query")
+                self.error("Expected '.' at the end of query", sync_tokens={TokenType.QUERY, TokenType.EOF})
         else:
-            self.error("Expected '?-' to start a query")
+            self.error("Expected '?-' to start a query", sync_tokens={TokenType.QUERY, TokenType.EOF})
 
     def predicate_list(self):
-        self.predicate()
-        while self.current_token.token_type == TokenType.COMMA:
-            self.advance()
-            self.predicate()
+        while True:
+            try:
+                self.predicate()
+                if self.current_token.token_type == TokenType.COMMA:
+                    self.advance()
+                else:
+                    break
+            except Exception as e:
+                self.error(f"Error in predicate list: {e}",
+                           sync_tokens={TokenType.COMMA, TokenType.PERIOD, TokenType.QUERY})
+                if self.current_token.token_type not in {TokenType.COMMA, TokenType.PERIOD, TokenType.QUERY}:
+                    self.advance()
 
     def term_list(self):
-        self.term()
-        while self.current_token.token_type == TokenType.COMMA:
-            self.advance()
-            self.term()
+        while True:
+            try:
+                self.term()
+                if self.current_token.token_type == TokenType.COMMA:
+                    self.advance()
+                else:
+                    break
+            except Exception as e:
+                self.error(f"Error in term list: {e}", sync_tokens={TokenType.COMMA, TokenType.CLOSE_PAREN})
+                if self.current_token.token_type not in {TokenType.COMMA, TokenType.CLOSE_PAREN}:
+                    self.advance()
 
     def term(self):
-        if self.current_token.token_type == TokenType.ATOM:
-            self.advance()
-            if self.current_token.token_type == TokenType.OPEN_PAREN:
+        try:
+            if self.current_token.token_type == TokenType.ATOM:
                 self.advance()
-                self.term_list()
-                self.match(TokenType.CLOSE_PAREN)
-        elif self.current_token.token_type in {TokenType.VARIABLE, TokenType.NUMERAL}:
-            self.advance()
-        else:
-            self.error("Expected <term>")
+                if self.current_token.token_type == TokenType.OPEN_PAREN:
+                    self.advance()
+                    self.term_list()
+                    self.match(TokenType.CLOSE_PAREN)
+            elif self.current_token.token_type in {TokenType.VARIABLE, TokenType.NUMERAL}:
+                self.advance()
+            else:
+                self.error("Expected <term>", sync_tokens={TokenType.COMMA, TokenType.CLOSE_PAREN})
+        except Exception as e:
+            self.error(f"Error in term: {e}", sync_tokens={TokenType.COMMA, TokenType.CLOSE_PAREN})
 
     def predicate(self):
-        if self.current_token.token_type == TokenType.ATOM:
-            self.advance()
-            if self.current_token.token_type == TokenType.OPEN_PAREN:
+        try:
+            if self.current_token.token_type == TokenType.ATOM:
                 self.advance()
-                self.term_list()
-                self.match(TokenType.CLOSE_PAREN)
-        else:
-            self.error("Expected <atom> in predicate")
+                if self.current_token.token_type == TokenType.OPEN_PAREN:
+                    self.advance()
+                    self.term_list()
+                    self.match(TokenType.CLOSE_PAREN)
+            else:
+                self.error("Expected <atom> in predicate", sync_tokens={TokenType.COMMA, TokenType.PERIOD})
+        except Exception as e:
+            self.error(f"Error in predicate: {e}", sync_tokens={TokenType.COMMA, TokenType.PERIOD})
 
-    def error(self, message, ):
+    def recover(self, sync_tokens):
+        logger.info(f"Recovering from error at line {self.current_token.line}, char {self.current_token.char_position}")
+        while self.current_token.token_type not in sync_tokens and self.current_token.token_type != TokenType.EOF:
+            self.advance()  # Skip the token
+        if self.current_token.token_type in sync_tokens:
+            logger.info(f"Recovered at {self.current_token}")
+
+    def error(self, message, sync_tokens=None):
         error_msg = f"Syntax Error: {message} at line {self.current_token.line}, char {self.current_token.char_position}"
         self.errors.append(error_msg)
         logger.error(error_msg)
+
+        if sync_tokens:
+            self.recover(sync_tokens)
+
 
 def main():
     file_num = 1
