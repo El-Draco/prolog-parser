@@ -1,6 +1,5 @@
 import os
 from enum import Enum, auto
-from loguru import logger
 
 class TokenType(Enum):
     """
@@ -403,7 +402,7 @@ class Parser:
         """
         error_msg = f"Syntax Error: {message} at line {self.current_token.line}, char {self.current_token.char_position}"
         self.errors.append(error_msg)
-        logger.error(error_msg)
+        print(error_msg)
         self.recover()
 
 
@@ -416,7 +415,6 @@ def main():
         filename = f"files/{file_num}.txt"
         if not os.path.isfile(filename):
             break
-        logger.info(f"FILE {file_num}")
         with open(filename, 'r') as f:
             code = f.read()
 
@@ -427,8 +425,10 @@ def main():
         with open(output_filename, "a") as f:
             if parser.errors:
                 f.write(f"{filename} contains syntax errors:\n" + "\n".join(parser.errors) + "\n\n")
+                print(f"\n{filename} contains syntax errors:\n" + "\n".join(parser.errors) + "\n\n")
             else:
                 f.write(f"{filename} is syntactically correct\n\n")
+                print(f"\n{filename} is syntactically correct\n\n")
         file_num += 1
 
 
