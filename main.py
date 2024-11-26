@@ -412,7 +412,7 @@ def main():
     open(output_filename, "w").close()
 
     while True:
-        filename = f"files/{file_num}.txt"
+        filename = f"./{file_num}.txt"
         if not os.path.isfile(filename):
             break
         with open(filename, 'r') as f:
