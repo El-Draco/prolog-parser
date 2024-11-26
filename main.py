@@ -175,8 +175,8 @@ class Parser:
 
     def parse(self):
         self.program()
-        if self.current_token.token_type != TokenType.EOF:
-            self.error("Expected end of file")
+        # if self.current_token.token_type != TokenType.EOF:
+            # self.error("Expected end of file")
 
     def program(self):
         if self.current_token.token_type == TokenType.QUERY:
@@ -186,7 +186,7 @@ class Parser:
             if self.current_token.token_type == TokenType.QUERY:
                 self.query()
             elif self.current_token.token_type != TokenType.EOF:
-                self.error("Expected end of file after clause list")
+                self.error("Expected <query> or end of file after clause list")
         else:
             self.error("Expected <clause-list> or <query> at start of program")
 
@@ -282,14 +282,23 @@ class Parser:
             self.error(f"Error in predicate: {e}", sync_tokens={TokenType.COMMA, TokenType.PERIOD})
 
     def recover(self, sync_tokens):
-        logger.info(f"Recovering from error at line {self.current_token.line}, char {self.current_token.char_position}")
+        # logger.info(f"Recovering from from error at line {self.current_token.line}, char {self.current_token.char_position}")
         while self.current_token.token_type not in sync_tokens and self.current_token.token_type != TokenType.EOF:
-            self.advance()  # Skip the token
-        if self.current_token.token_type in sync_tokens:
-            logger.info(f"Recovered at {self.current_token}")
+            # if self.current_token.token_type == TokenType.INVALID:
+                # Log invalid token explicitly during recovery
+                # self.error(f"Skipped invalid token '{self.current_token.value}'", sync_tokens=None)
+            self.advance()
 
     def error(self, message, sync_tokens=None):
+        if self.current_token.token_type == TokenType.INVALID:
+            error_msg = f"Syntax Error: Invalid token '{self.current_token.value}' at line {self.current_token.line}, char {self.current_token.char_position}"
+            self.errors.append(error_msg)
+            logger.error(error_msg)
+        # else:
         error_msg = f"Syntax Error: {message} at line {self.current_token.line}, char {self.current_token.char_position}"
+
+        # # Avoid duplicate error messages
+        # if error_msg not in self.errors:
         self.errors.append(error_msg)
         logger.error(error_msg)
 
