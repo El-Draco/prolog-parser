@@ -4,7 +4,8 @@ from loguru import logger
 
 class TokenType(Enum):
     """
-    Enum class to represent token types for this Prolog grammar
+    Enumeration for token types in the Prolog grammar.
+    Each token type represents a specific grammatical construct or symbol.
     """
     PLUS = auto()               # +
     MINUS = auto()              # -
@@ -21,7 +22,7 @@ class TokenType(Enum):
     CLOSE_PAREN = auto()        # )
     QUERY = auto()              # ?-
 
-    ATOM = auto()               # Atoms (here we'll have `criminal`, `american`, etc.)
+    ATOM = auto()
     VARIABLE = auto()
     NUMERAL = auto()
 
@@ -30,7 +31,13 @@ class TokenType(Enum):
 
 class Lexeme:
     """
-    Class representing a Lexeme
+    Represents a lexical unit in the input source code.
+
+    Attributes:
+        token_type (TokenType): The type of token (e.g., PLUS, ATOM).
+        value (str): The string representation of the lexeme.
+        line (int): The line number where the lexeme appears.
+        char_position (int): The character position of the lexeme on the line.
     """
     def __init__(self, token_type, value, line, char_position):
         self.token_type = token_type
@@ -42,6 +49,16 @@ class Lexeme:
         return f"Lexeme({self.token_type}, '{self.value}', Line: {self.line}, Char: {self.char_position})"
 
 class Lexer:
+    """
+    Lexical analyzer to tokenize Prolog source code.
+
+    Attributes:
+        code (str): The source code to be tokenized.
+        position (int): The current position in the source code.
+        line (int): The current line number being processed.
+        char_position (int): The position of the current character on the line.
+        length (int): The total length of the source code.
+    """
     def __init__(self, code: str):
         self.code = code
         self.position = 0
@@ -50,6 +67,12 @@ class Lexer:
         self.length = len(code)
 
     def get_next_char(self):
+        """
+        Retrieves the next character in the input code, updating position and line information.
+
+        Returns:
+            char (str): The next character, or None if end of code is reached.
+        """
         if self.position >= self.length:
             return None
         char = self.code[self.position]
@@ -61,11 +84,23 @@ class Lexer:
         return char
 
     def peek_next_char(self):
+        """
+        Peeks at the next character without advancing the position.
+
+        Returns:
+            char (str): The next character, or None if end of code is reached.
+        """
         if self.position >= self.length:
             return None
         return self.code[self.position]
 
     def tokenize(self):
+        """
+        Generates tokens from the input source code.
+
+        Yields:
+            Lexeme: The next lexeme generated from the source code.
+        """
         while True:
             char = self.get_next_char()
             if char is None:
@@ -121,6 +156,15 @@ class Lexer:
                 yield Lexeme(TokenType.INVALID, char, self.line, self.char_position)
 
     def tokenize_numeral(self, char):
+        """
+        Tokenizes a numeral starting with the given character.
+
+        Args:
+            char (str): The initial character of the numeral.
+
+        Returns:
+            Lexeme: A numeral lexeme.
+        """
         start_position = self.char_position
         value = char
         while self.peek_next_char() and self.peek_next_char().isdigit():
@@ -128,6 +172,15 @@ class Lexer:
         return Lexeme(TokenType.NUMERAL, value, self.line, start_position)
 
     def tokenize_atom(self, char):
+        """
+        Tokenizes an atom starting with the given character.
+
+        Args:
+            char (str): The initial character of the atom.
+
+        Returns:
+            Lexeme: An atom lexeme.
+        """
         start_position = self.char_position
         value = char
         while self.peek_next_char() and (self.peek_next_char().isalnum() or self.peek_next_char() == '_'):
@@ -135,6 +188,15 @@ class Lexer:
         return Lexeme(TokenType.ATOM, value, self.line, start_position)
 
     def tokenize_variable(self, char):
+        """
+        Tokenizes a variable starting with the given character.
+
+        Args:
+            char (str): The initial character of the variable.
+
+        Returns:
+            Lexeme: A variable lexeme.
+        """
         start_position = self.char_position
         value = char
         while self.peek_next_char() and (self.peek_next_char().isalnum() or self.peek_next_char() == '_'):
@@ -142,6 +204,15 @@ class Lexer:
         return Lexeme(TokenType.VARIABLE, value, self.line, start_position)
 
     def tokenize_string(self):
+        """
+       Tokenizes a string enclosed in single quotes.
+
+       Returns:
+           Lexeme: An atom lexeme representing the string.
+
+       Raises:
+           ValueError: If the string is not terminated before the end of the file.
+       """
         start_position = self.char_position
         value = ""
         while True:
@@ -155,6 +226,15 @@ class Lexer:
 
 
 class Parser:
+    """
+       Parser for Prolog grammar.
+
+       Attributes:
+           lexer (Lexer): The lexical analyzer providing tokens.
+           tokens (generator): The stream of tokens from the lexer.
+           current_token (Lexeme): The currently processed token.
+           errors (list): A list of syntax error messages.
+       """
     def __init__(self, lexer):
         self.tokens = lexer.tokenize()
         self.current_token = None
@@ -162,21 +242,39 @@ class Parser:
         self.advance()
 
     def advance(self):
+        """
+        Advances to the next token in the input.
+        """
         try:
             self.current_token = next(self.tokens)
+            if self.current_token.token_type == TokenType.INVALID:
+                self.error(f"Invalid token '{self.current_token.value}")
         except StopIteration:
             self.current_token = Lexeme(TokenType.EOF, "EOF", -1, -1)
 
     def match(self, expected_type, ):
+        """
+        Matches the current token against an expected type and advances if matched.
+
+        Args:
+            expected_type (TokenType): The expected token type.
+
+        Raises:
+            SyntaxError: If the current token does not match the expected type.
+        """
         if self.current_token.token_type == expected_type:
             self.advance()
         else:
             self.error(f"Expected {expected_type}, but found {self.current_token.token_type}")
 
     def parse(self):
-        self.program()
-        # if self.current_token.token_type != TokenType.EOF:
-            # self.error("Expected end of file")
+        """
+        Initiates parsing of the Prolog program.
+        """
+        try:
+            self.program()
+        except Exception as e:
+            print(e)
 
     def program(self):
         if self.current_token.token_type == TokenType.QUERY:
@@ -200,9 +298,9 @@ class Parser:
                 self.predicate_list()
                 self.match(TokenType.PERIOD)
             else:
-                self.error("Expected '.' or ':-' after predicate", sync_tokens={TokenType.PERIOD, TokenType.QUERY})
+                self.error("Expected '.' or ':-' after predicate")
         except Exception as e:
-            self.error(f"Error in clause: {e}", sync_tokens={TokenType.PERIOD, TokenType.QUERY})
+            self.error(f"Error in clause: {e}")
 
     def clause_list(self):
         while True:
@@ -211,7 +309,7 @@ class Parser:
                 if self.current_token.token_type != TokenType.ATOM:
                     break
             except Exception as e:
-                self.error(f"Error in clause list: {e}", sync_tokens={TokenType.ATOM, TokenType.QUERY})
+                self.error(f"Error in clause list: {e}")
                 if self.current_token.token_type not in {TokenType.ATOM, TokenType.QUERY}:
                     self.advance()
 
@@ -222,9 +320,9 @@ class Parser:
             if self.current_token.token_type == TokenType.PERIOD:
                 self.advance()
             else:
-                self.error("Expected '.' at the end of query", sync_tokens={TokenType.QUERY, TokenType.EOF})
+                self.error("Expected '.' at the end of query")
         else:
-            self.error("Expected '?-' to start a query", sync_tokens={TokenType.QUERY, TokenType.EOF})
+            self.error("Expected '?-' to start a query")
 
     def predicate_list(self):
         while True:
@@ -236,7 +334,7 @@ class Parser:
                     break
             except Exception as e:
                 self.error(f"Error in predicate list: {e}",
-                           sync_tokens={TokenType.COMMA, TokenType.PERIOD, TokenType.QUERY})
+                    )
                 if self.current_token.token_type not in {TokenType.COMMA, TokenType.PERIOD, TokenType.QUERY}:
                     self.advance()
 
@@ -249,7 +347,7 @@ class Parser:
                 else:
                     break
             except Exception as e:
-                self.error(f"Error in term list: {e}", sync_tokens={TokenType.COMMA, TokenType.CLOSE_PAREN})
+                self.error(f"Error in term list: {e}")
                 if self.current_token.token_type not in {TokenType.COMMA, TokenType.CLOSE_PAREN}:
                     self.advance()
 
@@ -264,9 +362,9 @@ class Parser:
             elif self.current_token.token_type in {TokenType.VARIABLE, TokenType.NUMERAL}:
                 self.advance()
             else:
-                self.error("Expected <term>", sync_tokens={TokenType.COMMA, TokenType.CLOSE_PAREN})
+                self.error("Expected <term>")
         except Exception as e:
-            self.error(f"Error in term: {e}", sync_tokens={TokenType.COMMA, TokenType.CLOSE_PAREN})
+            self.error(f"Error in term: {e}")
 
     def predicate(self):
         try:
@@ -277,33 +375,36 @@ class Parser:
                     self.term_list()
                     self.match(TokenType.CLOSE_PAREN)
             else:
-                self.error("Expected <atom> in predicate", sync_tokens={TokenType.COMMA, TokenType.PERIOD})
+                self.error("Expected <atom> in predicate")
         except Exception as e:
-            self.error(f"Error in predicate: {e}", sync_tokens={TokenType.COMMA, TokenType.PERIOD})
+            self.error(f"Error in predicate: {e}")
 
-    def recover(self, sync_tokens):
-        # logger.info(f"Recovering from from error at line {self.current_token.line}, char {self.current_token.char_position}")
+    def recover(self):
+        """
+        Attempts to recover from syntax errors by skipping to a synchronization token.
+        """
+        sync_tokens = {
+            TokenType.PERIOD,       # End of a clause
+            TokenType.COMMA,
+            TokenType.QUERY,        # Start of a query
+            TokenType.EOF,          # End of file
+            TokenType.CLOSE_PAREN   # End of a term list or predicate
+        }
+
         while self.current_token.token_type not in sync_tokens and self.current_token.token_type != TokenType.EOF:
-            # if self.current_token.token_type == TokenType.INVALID:
-                # Log invalid token explicitly during recovery
-                # self.error(f"Skipped invalid token '{self.current_token.value}'", sync_tokens=None)
             self.advance()
 
-    def error(self, message, sync_tokens=None):
-        if self.current_token.token_type == TokenType.INVALID:
-            error_msg = f"Syntax Error: Invalid token '{self.current_token.value}' at line {self.current_token.line}, char {self.current_token.char_position}"
-            self.errors.append(error_msg)
-            logger.error(error_msg)
-        # else:
-        error_msg = f"Syntax Error: {message} at line {self.current_token.line}, char {self.current_token.char_position}"
+    def error(self, message):
+        """
+        Records a syntax error message and logs it.
 
-        # # Avoid duplicate error messages
-        # if error_msg not in self.errors:
+        Args:
+            message (str): The error message to log and record.
+        """
+        error_msg = f"Syntax Error: {message} at line {self.current_token.line}, char {self.current_token.char_position}"
         self.errors.append(error_msg)
         logger.error(error_msg)
-
-        if sync_tokens:
-            self.recover(sync_tokens)
+        self.recover()
 
 
 def main():
@@ -312,11 +413,10 @@ def main():
     open(output_filename, "w").close()
 
     while True:
-        logger.info(f"FILE {file_num}")
         filename = f"files/{file_num}.txt"
         if not os.path.isfile(filename):
             break
-
+        logger.info(f"FILE {file_num}")
         with open(filename, 'r') as f:
             code = f.read()
 
