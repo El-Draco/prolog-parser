@@ -402,7 +402,6 @@ class Parser:
         """
         error_msg = f"Syntax Error: {message} at line {self.current_token.line}, char {self.current_token.char_position}"
         self.errors.append(error_msg)
-        print(error_msg)
         self.recover()
 
 
@@ -412,7 +411,7 @@ def main():
     open(output_filename, "w").close()
 
     while True:
-        filename = f"./{file_num}.txt"
+        filename = f"files/{file_num}.txt"
         if not os.path.isfile(filename):
             break
         with open(filename, 'r') as f:
